@@ -130,3 +130,322 @@ def evaluate_file(input_path):
                 f.write("\n")
 
     return results
+
+
+
+# THE BELOW SECTION IS DONE BY DARSHANA THAPA
+
+
+
+
+
+def parse_expression(tokens, pos):
+
+    """Level 1 - Lowest Precedence"""
+
+    node, pos = parse_term(tokens, pos)
+
+    if node is None:
+
+        return None, pos
+
+
+
+    while tokens[pos][0] == 'OP' and tokens[pos][1] in ('+', '-'):
+
+        op = tokens[pos][1]
+
+        pos += 1
+
+        right, pos = parse_term(tokens, pos)
+
+        if right is None:
+
+            return None, pos
+
+        node = (op, node, right)
+
+
+
+    return node, pos
+
+
+
+
+
+def parse_term(tokens, pos):
+
+    """Level 2"""
+
+    node, pos = parse_unary(tokens, pos)
+
+    if node is None:
+
+        return None, pos
+
+
+
+    while True:
+
+        tok_type, tok_val = tokens[pos]
+
+
+
+        if tok_type == 'OP' and tok_val in ('*', '/', '%'):
+
+            pos += 1
+
+            right, pos = parse_unary(tokens, pos)
+
+            if right is None:
+
+                return None, pos
+
+            node = (tok_val, node, right)
+
+
+
+        elif tok_type == 'LPAREN':
+
+            right, pos = parse_unary(tokens, pos)
+
+            if right is None:
+
+                return None, pos
+
+            node = ('*', node, right)
+
+
+
+        else:
+
+            break
+
+
+
+    return node, pos
+
+
+
+
+
+def parse_unary(tokens, pos):
+
+    """Level 3"""
+
+    tok_type, tok_val = tokens[pos]
+
+
+
+    if tok_type == 'OP' and tok_val == '-':
+
+        pos += 1
+
+        operand, pos = parse_unary(tokens, pos)
+
+        if operand is None:
+
+            return None, pos
+
+        return ('neg', operand), pos
+
+
+
+    return parse_power(tokens, pos)
+
+
+
+
+
+def parse_power(tokens, pos):
+
+    """Level 4 Highest Precedence"""
+
+    node, pos = parse_primary(tokens, pos)
+
+    if node is None:
+
+        return None, pos
+
+
+
+    tok_type, tok_val = tokens[pos]
+
+    if tok_type == 'OP' and tok_val == '^':
+
+        pos += 1
+
+        right, pos = parse_unary(tokens, pos)
+
+        if right is None:
+
+            return None, pos
+
+        node = ('^', node, right)
+
+
+
+    return node, pos
+
+
+
+
+
+def parse_primary(tokens, pos):
+
+    tok_type, tok_val = tokens[pos]
+
+
+
+    if tok_type == 'NUM':
+
+        return ('num', float(tok_val)), pos + 1
+
+
+
+    if tok_type == 'LPAREN':
+
+        node, pos = parse_expression(tokens, pos + 1)
+
+        if node is None:
+
+            return None, pos
+
+        if tokens[pos][0] != 'RPAREN':
+
+            return None, pos
+
+        return node, pos + 1
+
+
+
+    return None, pos
+
+
+
+
+
+def tree_to_string(node):
+
+    tag = node[0]
+
+
+
+    if tag == 'num':
+
+        return format_number(node[1])
+
+
+
+    if tag == 'neg':
+
+        return f"(neg {tree_to_string(node[1])})"
+
+
+
+    left_str = tree_to_string(node[1])
+
+    right_str = tree_to_string(node[2])
+
+    return f"({tag} {left_str} {right_str})"
+
+
+
+
+
+def evaluate_tree(node):
+
+    tag = node[0]
+
+
+
+    if tag == 'num':
+
+        return node[1]
+
+
+
+    if tag == 'neg':
+
+        value = evaluate_tree(node[1])
+
+        if value is None:
+
+            return None
+
+        return -value
+
+
+
+    left = evaluate_tree(node[1])
+
+    right = evaluate_tree(node[2])
+
+    if left is None or right is None:
+
+        return None
+
+
+
+    if tag == '+':
+
+        return left + right
+
+    if tag == '-':
+
+        return left - right
+
+    if tag == '*':
+
+        return left * right
+
+    if tag == '/':
+
+        if right == 0:
+
+            return None
+
+        return left / right
+
+    if tag == '%':
+
+        if right == 0:
+
+            return None
+
+        return left % right
+
+    if tag == '^':
+
+        return left ** right
+
+
+
+    return None
+
+
+
+
+
+def format_number(value):
+
+    """Whole numbers with no decimal point, else rounded to 4 decimals."""
+
+    if value == int(value):
+
+        return str(int(value))
+
+    return str(round(value, 4))
+
+
+
+
+
+if __name__ == "__main__":
+
+    results = evaluate_file("sample_input.txt")
+
+    for r in results:
+
+        print(r)
+
