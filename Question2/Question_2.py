@@ -442,10 +442,16 @@ def format_number(value):
 
 
 if __name__ == "__main__":
+   current_folder = os.path.dirname(os.path.abspath(__file__))
+   input_path = os.path.join(current_folder, "sample_input.txt")
 
-    results = evaluate_file("sample_input.txt")
+   results = evaluate_file(input_path)
 
-    for r in results:
+   for r in results:
+        print(r)
+
+
+   for r in results:
 
         print(r)
 
